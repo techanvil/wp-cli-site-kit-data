@@ -1,0 +1,4 @@
+/.claude-plugin export-ignore
+/skills export-ignore
+/tests export-ignore
+/phpunit.xml.dist export-ignore

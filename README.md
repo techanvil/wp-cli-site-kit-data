@@ -94,6 +94,30 @@ wp site-kit-data get analytics-4 report --user=admin --params=- < report.json
 
 ## Using it from an agent
 
+### Claude Code skill
+
+This repo is also a Claude Code plugin with a `site-kit-data` skill. The skill tells agents
+when to use the command, what options the common datapoints take, what the errors mean, and to
+keep API calls small. Install it with:
+
+```
+/plugin install site-kit-data --marketplace techanvil/wp-cli-site-kit-data
+```
+
+On older Claude Code versions, add the marketplace first:
+
+```
+/plugin marketplace add techanvil/wp-cli-site-kit-data
+/plugin install site-kit-data@wp-cli-site-kit-data
+```
+
+Or copy or symlink `skills/site-kit-data` into `~/.claude/skills/`. The skill doesn't install
+the WP-CLI package; install that with `wp package install` as above.
+
+For agents that don't load skills, add a line to the project's `AGENTS.md` or `CLAUDE.md`, e.g.
+"For real Site Kit report data on a local site, use `wp site-kit-data get` (read-only), never
+`wp eval`."
+
 ### Allowlisting
 
 The command has a fixed prefix that permission rules can auto-approve, unlike `wp eval` or

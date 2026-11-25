@@ -1,0 +1,16 @@
+{
+  "name": "wp-cli-site-kit-data",
+  "owner": {
+    "name": "techanvil"
+  },
+  "metadata": {
+    "description": "Read-only Site Kit by Google data from WP-CLI, for coding agents."
+  },
+  "plugins": [
+    {
+      "name": "site-kit-data",
+      "source": "./",
+      "description": "Fetch real Site Kit by Google report data read-only with `wp site-kit-data get`."
+    }
+  ]
+}
