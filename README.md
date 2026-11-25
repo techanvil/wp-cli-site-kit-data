@@ -43,6 +43,22 @@ the error code and message (and `data.reason` when present) and exits 1, e.g.:
 Error: 403 missing_required_scopes: You'll need to grant Site Kit permission to do this. (reason: …)
 ```
 
+### Finding modules and datapoints
+
+```
+wp site-kit-data modules --user=<id|login|email> [--fields=<fields>] [--format=table|json|csv|yaml]
+wp site-kit-data datapoints <module> [--fields=<fields>] [--format=table|json|csv|yaml]
+```
+
+- `modules` lists Site Kit's modules with whether each is active, connected and shareable,
+  from Site Kit's `core/modules/data/list` route (`GET`, as `--user`).
+- `datapoints` lists a module's `GET` datapoints, the names `get` accepts, and whether each is
+  shareable (available to users with view-only dashboard access). It doesn't need `--user`.
+  Site Kit has no public API for this, so it reads the module's datapoint definitions by
+  reflection; a future Site Kit release could break it without breaking `get`.
+
+Neither makes Google API requests.
+
 ### Examples
 
 ```sh
@@ -126,7 +142,7 @@ The command has a fixed prefix that permission rules can auto-approve, unlike `w
 ```json
 {
   "permissions": {
-    "allow": ["Bash(wp site-kit-data get:*)"]
+    "allow": ["Bash(wp site-kit-data:*)"]
   }
 }
 ```
@@ -142,10 +158,10 @@ and allowlist the wrapper. For example, `~/bin/sk-data`:
 
 ```sh
 #!/usr/bin/env bash
-# Usage: sk-data <site-id> <module> <datapoint> [wp site-kit-data get options…]
+# Usage: sk-data <site-id> <get|modules|datapoints> [arguments and options…]
 set -euo pipefail
 
-site_id="${1:?Usage: sk-data <site-id> <module> <datapoint> [options]}"
+site_id="${1:?Usage: sk-data <site-id> <get|modules|datapoints> [arguments]}"
 shift
 [[ "$site_id" =~ ^[A-Za-z0-9_-]+$ ]] || { echo "Invalid site id" >&2; exit 1; }
 
@@ -156,7 +172,7 @@ entry="$HOME/.config/Local/ssh-entry/${site_id}.sh"
 # starting an interactive shell, so take only the exports and cd from it.
 eval "$(grep -E '^(export |cd )' "$entry")"
 
-exec wp site-kit-data get "$@"
+exec wp site-kit-data "$@"
 ```
 
 Then allow `Bash(sk-data:*)`. Check your site's entry script first: the wrapper assumes it

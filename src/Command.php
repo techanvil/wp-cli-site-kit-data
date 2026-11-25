@@ -32,7 +32,7 @@ final class Command {
 	 * : Module slug, e.g. analytics-4, search-console, adsense.
 	 *
 	 * <datapoint>
-	 * : Datapoint name, e.g. report, searchanalytics.
+	 * : Datapoint name, e.g. report, searchanalytics. See `wp site-kit-data datapoints <module>`.
 	 *
 	 * [--params=<json>]
 	 * : Request options as a JSON object. Use - to read the JSON from stdin.
@@ -108,6 +108,151 @@ final class Command {
 			$flags |= JSON_PRETTY_PRINT;
 		}
 		WP_CLI::line( wp_json_encode( $data, $flags ) );
+	}
+
+	/**
+	 * Lists Site Kit's modules, with whether each is active and connected.
+	 *
+	 * Reads Site Kit's core/modules/data/list route (GET) as the user given with --user.
+	 * Makes no Google API requests.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--fields=<fields>]
+	 * : Comma-separated fields to show. Also available: description, homepage, internal,
+	 * order, forceActive, recoverable, dependencies, dependants, owner.
+	 * ---
+	 * default: slug,name,active,connected,shareable
+	 * ---
+	 *
+	 * [--format=<format>]
+	 * : Output format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
+	 * ---
+	 *
+	 * The global --user flag is required: it is the user to request as.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp site-kit-data modules --user=1
+	 *
+	 *     # Slugs of active, connected modules.
+	 *     $ wp site-kit-data modules --user=1 --format=json | jq -r '.[] | select(.active and .connected) | .slug'
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 */
+	public function modules( $args, $assoc_args ) {
+		$this->check_environment();
+		$this->check_user();
+
+		$response = rest_do_request( new WP_REST_Request( 'GET', '/google-site-kit/v1/core/modules/data/list' ) );
+		$data     = json_decode( wp_json_encode( $response->get_data() ), true );
+		if ( 200 !== $response->get_status() ) {
+			WP_CLI::error( $this->format_error( $response->get_status(), json_decode( wp_json_encode( $response->get_data() ) ) ) );
+		}
+
+		$this->print_items( (array) $data, $assoc_args );
+	}
+
+	/**
+	 * Lists a module's GET datapoints: the names `get` accepts.
+	 *
+	 * A shareable datapoint can also be requested by users with view-only dashboard access.
+	 * Makes no requests. Site Kit must be active, but --user isn't needed.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <module>
+	 * : Module slug, e.g. analytics-4, search-console, adsense. See `wp site-kit-data modules`.
+	 *
+	 * [--fields=<fields>]
+	 * : Comma-separated fields to show.
+	 * ---
+	 * default: datapoint,shareable
+	 * ---
+	 *
+	 * [--format=<format>]
+	 * : Output format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp site-kit-data datapoints search-console
+	 *     +-----------------+-----------+
+	 *     | datapoint       | shareable |
+	 *     +-----------------+-----------+
+	 *     | matched-sites   | no        |
+	 *     | searchanalytics | yes       |
+	 *     | sites           | no        |
+	 *     +-----------------+-----------+
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 */
+	public function datapoints( $args, $assoc_args ) {
+		try {
+			$module = Validator::module( $args[0] );
+		} catch ( InvalidArgumentException $e ) {
+			WP_CLI::error( $e->getMessage() );
+		}
+
+		$this->check_environment();
+
+		try {
+			$rows = Datapoints::for_module( $module );
+		} catch ( InvalidArgumentException $e ) {
+			WP_CLI::error( $e->getMessage() );
+		} catch ( \Throwable $e ) {
+			WP_CLI::error( 'Could not read datapoints from Site Kit: ' . $e->getMessage() );
+		}
+
+		$this->print_items( $rows, $assoc_args );
+	}
+
+	/**
+	 * Prints rows with WP-CLI's formatter. Booleans show as yes/no in table and csv.
+	 *
+	 * @param array[] $items      Rows.
+	 * @param array   $assoc_args Associative arguments, with `fields` and `format`.
+	 */
+	private function print_items( array $items, array $assoc_args ) {
+		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+		$fields = isset( $assoc_args['fields'] ) ? $assoc_args['fields'] : array();
+		if ( is_string( $fields ) ) {
+			$fields = array_map( 'trim', explode( ',', $fields ) );
+		}
+
+		if ( in_array( $format, array( 'table', 'csv' ), true ) ) {
+			$items = array_map(
+				function ( $item ) {
+					foreach ( $item as $key => $value ) {
+						if ( is_bool( $value ) ) {
+							$item[ $key ] = $value ? 'yes' : 'no';
+						} elseif ( is_array( $value ) ) {
+							$item[ $key ] = wp_json_encode( $value );
+						}
+					}
+					return $item;
+				},
+				$items
+			);
+		}
+
+		\WP_CLI\Utils\format_items( $format, $items, $fields );
 	}
 
 	/**
