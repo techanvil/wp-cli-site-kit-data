@@ -1,0 +1,22 @@
+{
+    "name": "techanvil/wp-cli-site-kit-data",
+    "description": "Read-only Site Kit by Google report queries from WP-CLI.",
+    "type": "wp-cli-package",
+    "license": "Apache-2.0",
+    "keywords": ["wp-cli", "site-kit", "google", "analytics", "search-console"],
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload": {
+        "files": ["command.php"]
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
