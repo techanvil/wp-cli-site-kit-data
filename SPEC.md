@@ -42,14 +42,20 @@ wp site-kit-data get <module> <datapoint> [--params=<json>] [--user=<id|login|em
 Two more subcommands help find what to request. Neither makes Google API requests.
 
 ```
-wp site-kit-data modules --user=<id|login|email> [--fields=<fields>] [--format=table|json|csv|yaml]
-wp site-kit-data datapoints <module> [--fields=<fields>] [--format=table|json|csv|yaml]
+wp site-kit-data modules --user=<id|login|email> [--fields=<fields>] [--orderby=<field>] [--order=asc|desc] [--format=table|json|csv|yaml]
+wp site-kit-data datapoints <module> [--fields=<fields>] [--orderby=<field>] [--order=asc|desc] [--format=table|json|csv|yaml]
 ```
 
 - `modules`: Site Kit's modules, from a `GET` to `core/modules/data/list` as `--user`. Default
   fields `slug,name,active,connected,shareable`.
 - `datapoints`: a module's `GET` datapoints (the names `get` accepts) and whether each is
   shareable. Doesn't need `--user`. See [Listing datapoints](#listing-datapoints).
+- `--orderby=<field>` sorts by any field in the rows, shown or not; `--order` is `asc`
+  (default) or `desc`. Numbers and booleans sort numerically (`false` first), strings naturally
+  and case-insensitively; rows without the field go last; ties keep their order. An unknown
+  field errors with the available ones. Without `--orderby`, `modules` keeps the order Site
+  Kit returns, which this package doesn't interpret (currently Site Kit sorts by each module's
+  `order` value, then registration order), and `datapoints` is sorted by name.
 
 Examples:
 
@@ -161,7 +167,8 @@ wp-cli-site-kit-data/
 ├── src/Validator.php    # Argument validation, no WordPress dependency
 ├── src/User_Hook.php    # Resolves --user and filters determine_current_user
 ├── src/Datapoints.php   # Reads a module's GET datapoints (by reflection)
-├── tests/               # PHPUnit tests for Validator and Datapoints
+├── src/Rows.php         # Sorts modules and datapoints rows for --orderby
+├── tests/               # PHPUnit tests for Validator, Datapoints and Rows
 ├── skills/site-kit-data/SKILL.md  # Claude Code skill
 ├── .claude-plugin/      # plugin.json and marketplace.json: the repo is its own marketplace
 ├── README.md            # Install, usage, examples, safety notes, agent allowlisting
@@ -207,7 +214,7 @@ The README should cover:
 ## Testing
 
 - Unit-test argument validation (slug and datapoint patterns, `--params` decoding and reserved
-  keys) and the `GET:` filtering of datapoint definitions, without WordPress.
+  keys), the `GET:` filtering of datapoint definitions and `--orderby` sorting, without WordPress.
 - Manual checks against a site with Site Kit connected:
   - A valid report as an admin with the scopes returns 200 and rows.
   - The same request without `--user` errors before any request.

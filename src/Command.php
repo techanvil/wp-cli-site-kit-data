@@ -125,6 +125,18 @@ final class Command {
 	 * default: slug,name,active,connected,shareable
 	 * ---
 	 *
+	 * [--orderby=<field>]
+	 * : Field to sort by. Any field works, shown or not. Defaults to the order Site Kit returns.
+	 *
+	 * [--order=<order>]
+	 * : Sort direction, with --orderby.
+	 * ---
+	 * default: asc
+	 * options:
+	 *   - asc
+	 *   - desc
+	 * ---
+	 *
 	 * [--format=<format>]
 	 * : Output format.
 	 * ---
@@ -141,6 +153,9 @@ final class Command {
 	 * ## EXAMPLES
 	 *
 	 *     $ wp site-kit-data modules --user=1
+	 *
+	 *     # Connected modules first.
+	 *     $ wp site-kit-data modules --user=1 --orderby=connected --order=desc
 	 *
 	 *     # Slugs of active, connected modules.
 	 *     $ wp site-kit-data modules --user=1 --format=json | jq -r '.[] | select(.active and .connected) | .slug'
@@ -178,6 +193,18 @@ final class Command {
 	 * default: datapoint,shareable
 	 * ---
 	 *
+	 * [--orderby=<field>]
+	 * : Field to sort by. Any field works, shown or not. Defaults to datapoint.
+	 *
+	 * [--order=<order>]
+	 * : Sort direction, with --orderby.
+	 * ---
+	 * default: asc
+	 * options:
+	 *   - asc
+	 *   - desc
+	 * ---
+	 *
 	 * [--format=<format>]
 	 * : Output format.
 	 * ---
@@ -199,6 +226,9 @@ final class Command {
 	 *     | searchanalytics | yes       |
 	 *     | sites           | no        |
 	 *     +-----------------+-----------+
+	 *
+	 *     # Shareable datapoints first.
+	 *     $ wp site-kit-data datapoints analytics-4 --orderby=shareable --order=desc
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
@@ -224,12 +254,25 @@ final class Command {
 	}
 
 	/**
-	 * Prints rows with WP-CLI's formatter. Booleans show as yes/no in table and csv.
+	 * Sorts rows if asked, and prints them with WP-CLI's formatter. Booleans show as yes/no in
+	 * table and csv.
 	 *
 	 * @param array[] $items      Rows.
-	 * @param array   $assoc_args Associative arguments, with `fields` and `format`.
+	 * @param array   $assoc_args Associative arguments, with `fields`, `format`, `orderby` and `order`.
 	 */
 	private function print_items( array $items, array $assoc_args ) {
+		if ( isset( $assoc_args['orderby'] ) ) {
+			try {
+				$items = Rows::sort(
+					$items,
+					$assoc_args['orderby'],
+					isset( $assoc_args['order'] ) ? $assoc_args['order'] : 'asc'
+				);
+			} catch ( InvalidArgumentException $e ) {
+				WP_CLI::error( $e->getMessage() );
+			}
+		}
+
 		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 		$fields = isset( $assoc_args['fields'] ) ? $assoc_args['fields'] : array();
 		if ( is_string( $fields ) ) {

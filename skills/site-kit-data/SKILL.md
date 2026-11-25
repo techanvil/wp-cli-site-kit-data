@@ -16,7 +16,8 @@ wp site-kit-data datapoints <module>                # GET datapoints get accepts
 wp site-kit-data get <module> <datapoint> --user=<id|login|email> [--params=<json>] [--format=json|compact]
 ```
 
-Start with `modules` and `datapoints` instead of guessing names; neither calls Google.
+Start with `modules` and `datapoints` instead of guessing names; neither calls Google. Both
+take `--fields`, `--format=table|json|csv|yaml`, and `--orderby=<field> [--order=desc]`.
 
 - `--user` is required. Use an administrator who connected Site Kit (often `1`). To find one:
   `wp user list --role=administrator --fields=ID,user_login`.

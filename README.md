@@ -46,8 +46,8 @@ Error: 403 missing_required_scopes: You'll need to grant Site Kit permission to 
 ### Finding modules and datapoints
 
 ```
-wp site-kit-data modules --user=<id|login|email> [--fields=<fields>] [--format=table|json|csv|yaml]
-wp site-kit-data datapoints <module> [--fields=<fields>] [--format=table|json|csv|yaml]
+wp site-kit-data modules --user=<id|login|email> [--fields=<fields>] [--orderby=<field>] [--order=asc|desc] [--format=table|json|csv|yaml]
+wp site-kit-data datapoints <module> [--fields=<fields>] [--orderby=<field>] [--order=asc|desc] [--format=table|json|csv|yaml]
 ```
 
 - `modules` lists Site Kit's modules with whether each is active, connected and shareable,
@@ -56,6 +56,8 @@ wp site-kit-data datapoints <module> [--fields=<fields>] [--format=table|json|cs
   shareable (available to users with view-only dashboard access). It doesn't need `--user`.
   Site Kit has no public API for this, so it reads the module's datapoint definitions by
   reflection; a future Site Kit release could break it without breaking `get`.
+- `--orderby` sorts by any field, shown or not (e.g. `--orderby=connected --order=desc`).
+  Without it, `modules` keeps the order Site Kit returns and `datapoints` is sorted by name.
 
 Neither makes Google API requests.
 

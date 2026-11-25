@@ -12,6 +12,7 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 require_once __DIR__ . '/src/Validator.php';
 require_once __DIR__ . '/src/User_Hook.php';
 require_once __DIR__ . '/src/Datapoints.php';
+require_once __DIR__ . '/src/Rows.php';
 require_once __DIR__ . '/src/Command.php';
 
 WP_CLI::add_command( 'site-kit-data', 'SiteKitData\\Command' );
